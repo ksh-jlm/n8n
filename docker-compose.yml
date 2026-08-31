@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      - DB_TYPE=${N8N_DB_TYPE:-sqlite}
+      - DB_SQLITE_FILE=/home/node/n8n/${N8N_DB_SQLITE_DB_FILE:-n8n.db}
+      - N8N_PROTOCOL=${N8N_PROTOCOL:-http}
+      - N8N_HOST=${N8N_HOST:-localhost}
+      - N8N_PORT=${N8N_PORT:-5678}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_DEFAULT_LOGIN_EMAIL=${N8N_DEFAULT_LOGIN_EMAIL}
+      - N8N_DEFAULT_LOGIN_PASSWORD=${N8N_DEFAULT_LOGIN_PASSWORD}
+      - N8N_LOG_LEVEL=${N8N_LOG_LEVEL:-info}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+      - N8N_EXECUTIONS_DATA_PRUNE=${N8N_EXECUTIONS_DATA_PRUNE:-true}
+      - N8N_EXECUTIONS_DATA_MAX_AGE=${N8N_EXECUTIONS_DATA_MAX_AGE:-336}
+      - NODE_ENV=${NODE_ENV:-production}
+    volumes:
+      - n8n_data:/home/node/n8n
+      - .:/data/repo
+    networks:
+      - n8n_network
+    restart: unless-stopped
+
+volumes:
+  n8n_data:
+
+networks:
+  n8n_network:
+    driver: bridge
