@@ -1,0 +1,124 @@
+{
+  "name": "[공통] 인기 뉴스 Gmail 발송 (Schedule)",
+  "nodes": [
+    {
+      "id": "trg-schedule-news01",
+      "name": "매일 08시",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-news-news02",
+      "name": "인기 뉴스 조회",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "url": "https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "code-format-news03",
+      "name": "뉴스 1건 추출",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const rssXml = $('인기 뉴스 조회').first().json.data || $('인기 뉴스 조회').first().json;\nconst xmlString = typeof rssXml === 'string' ? rssXml : JSON.stringify(rssXml);\nconst itemBlocks = [...xmlString.matchAll(/<item>([\\s\\S]*?)<\\/item>/g)].map(m => m[1]);\n\nif (itemBlocks.length === 0) {\n  throw new Error('뉴스 항목을 찾을 수 없습니다.');\n}\n\nconst first = itemBlocks[0];\nconst titleMatch = first.match(/<title>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/title>/);\nconst linkMatch = first.match(/<link>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/link>/);\nconst pubDateMatch = first.match(/<pubDate>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/pubDate>/);\nconst sourceMatch = first.match(/<source[^>]*>(?:<!\\[CDATA\\[)?(.*?)(?:\\]\\]>)?<\\/source>/);\n\nconst title = titleMatch ? titleMatch[1] : '제목 없음';\nconst link = linkMatch ? linkMatch[1] : '';\nconst pubDate = pubDateMatch ? pubDateMatch[1] : '';\nconst source = sourceMatch ? sourceMatch[1] : '';\n\nconst today = new Date().toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });\n\nconst subject = `[오늘의 인기 뉴스] ${title}`;\nconst html = `<h2>${today} 인기 뉴스</h2><p><b>${title}</b></p><p>출처: ${source}<br/>발행: ${pubDate}</p><p><a href=\"${link}\">${link}</a></p>`;\n\nreturn [{ json: { title, link, pubDate, source, subject, html } }];\n"
+      }
+    },
+    {
+      "id": "email-send-news04",
+      "name": "Gmail 발송",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        900,
+        300
+      ],
+      "parameters": {
+        "fromEmail": "lycos0816@gmail.com",
+        "toEmail": "lycos0816@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.html }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": "Be2xdJYNEamzo7E6",
+          "name": "Gmail SMTP"
+        }
+      },
+      "webhookId": "00469de5-772c-4a77-b706-405172aeb417"
+    }
+  ],
+  "connections": {
+    "매일 08시": {
+      "main": [
+        [
+          {
+            "node": "인기 뉴스 조회",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "인기 뉴스 조회": {
+      "main": [
+        [
+          {
+            "node": "뉴스 1건 추출",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "뉴스 1건 추출": {
+      "main": [
+        [
+          {
+            "node": "Gmail 발송",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": null,
+  "meta": null
+}
