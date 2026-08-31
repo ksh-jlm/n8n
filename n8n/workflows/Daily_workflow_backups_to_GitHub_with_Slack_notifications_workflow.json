@@ -1,0 +1,181 @@
+{
+  "name": "Daily workflow backups to GitHub with Slack notifications",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "매일 21:50",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "50 21 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "gitpush1",
+      "name": "Git Add Commit Push",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        550,
+        300
+      ],
+      "onError": "continueRegularOutput",
+      "parameters": {
+        "command": "cmd /d /s /c \"cd /d \"F:\\claude_1900\\workspace\\cluade2\\n8n\" && git add -A && (git diff --cached --quiet || git commit -m \"auto backup %date% %time%\") && git push origin main\""
+      },
+      "notes": "매일 21:50 F:\\claude_1900\\workspace\\cluade2\\n8n 저장소를 add/commit/push. origin은 https://github.com/ksh-jlm/n8n.git (PAT/SSH 인증 기설정됨), 브랜치는 main."
+    },
+    {
+      "id": "if1",
+      "name": "Push 성공 여부",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        850,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond1",
+              "leftValue": "={{ $json.error }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "empty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "slacksuccess1",
+      "name": "Slack 성공 알림",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#n8n",
+          "mode": "name"
+        },
+        "text": "=:white_check_mark: n8n 워크플로우 백업 완료\n저장소: F:\\claude_1900\\workspace\\cluade2\\n8n\n시각: {{ $now.format('yyyy-MM-dd HH:mm:ss') }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "b5b48bee-bdbd-4fdd-98b6-fb4b5178ab8a"
+    },
+    {
+      "id": "slackfail1",
+      "name": "Slack 실패 알림",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1100,
+        400
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#n8n",
+          "mode": "name"
+        },
+        "text": "=:x: n8n 워크플로우 백업 실패\n저장소: F:\\claude_1900\\workspace\\cluade2\\n8n\n시각: {{ $now.format('yyyy-MM-dd HH:mm:ss') }}\n에러: ```{{ $json.error?.message || JSON.stringify($json).slice(0, 500) }}```",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "b7f4db4f-8ccb-4b0d-a1a0-69302ace9cbe"
+    }
+  ],
+  "connections": {
+    "매일 21:50": {
+      "main": [
+        [
+          {
+            "node": "Git Add Commit Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Git Add Commit Push": {
+      "main": [
+        [
+          {
+            "node": "Push 성공 여부",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Push 성공 여부": {
+      "main": [
+        [
+          {
+            "node": "Slack 성공 알림",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack 실패 알림",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": null,
+  "tags": []
+}
