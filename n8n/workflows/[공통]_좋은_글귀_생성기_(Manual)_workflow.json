@@ -1,0 +1,53 @@
+{
+  "name": "[공통] 좋은 글귀 생성기 (Manual)",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "code1",
+      "name": "좋은 글귀 선택",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const quotes = [\n  '오늘도 최선을 다한 당신, 정말 멋집니다.',\n  '작은 걸음도 결국 목적지에 닿습니다.',\n  '실패는 성공으로 가는 또 다른 이름입니다.',\n  '지금 이 순간에 최선을 다하세요.',\n  '어제보다 나은 오늘을 만드세요.',\n  '포기하지 않는 한 실패는 없습니다.',\n  '당신의 속도로 나아가면 충분합니다.',\n  '작은 습관이 큰 변화를 만듭니다.',\n  '오늘의 노력은 내일의 열매가 됩니다.',\n  '꿈을 향한 한 걸음, 오늘도 응원합니다.'\n];\n\nconst quote = quotes[Math.floor(Math.random() * quotes.length)];\n\nreturn [{ json: { quote, generatedAt: new Date().toISOString() } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "좋은 글귀 선택",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": null,
+  "tags": []
+}
