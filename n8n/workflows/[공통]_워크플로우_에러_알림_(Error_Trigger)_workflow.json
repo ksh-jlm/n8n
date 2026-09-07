@@ -1,0 +1,97 @@
+{
+  "name": "[공통] 워크플로우 에러 알림 (Error Trigger)",
+  "nodes": [
+    {
+      "id": "error-trigger-0001",
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "code-format-0002",
+      "name": "에러 메시지 포맷",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const TZ = 'Asia/Seoul';\nconst data = $input.first().json;\n\nconst workflowName = data.workflow?.name || '(알 수 없음)';\nconst failedNode = data.execution?.lastNodeExecuted || '(알 수 없음)';\nconst errorMessage = data.execution?.error?.message || '(에러 메시지 없음)';\nconst executionUrl = data.execution?.url || '';\nconst mode = data.execution?.mode || '';\nconst retryOf = data.execution?.retryOf;\n\nconst nowKST = new Intl.DateTimeFormat('ko-KR', {\n  timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit',\n  hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false\n}).format(new Date());\n\nconst lines = [\n  ':rotating_light: *워크플로우 오류 발생*',\n  '',\n  `*워크플로우:* ${workflowName}`,\n  `*실패 노드:* ${failedNode}`,\n  `*에러 메시지:* ${errorMessage}`,\n  `*실행 모드:* ${mode}${retryOf ? ` (재시도, 원본 실행 ID: ${retryOf})` : ''}`,\n  `*발생 시각:* ${nowKST} (KST)`,\n];\n\nif (executionUrl) {\n  lines.push(`*실행 로그:* ${executionUrl}`);\n}\n\nreturn [{\n  json: {\n    slackText: lines.join('\\n')\n  }\n}];"
+      }
+    },
+    {
+      "id": "slack-send-0003",
+      "name": "Slack 에러 알림 전송",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#n8n",
+          "mode": "name"
+        },
+        "text": "={{ $json.slackText }}",
+        "otherOptions": {}
+      },
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      },
+      "webhookId": "9943d058-a709-42f0-8c06-b8acf27defdb"
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "에러 메시지 포맷",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "에러 메시지 포맷": {
+      "main": [
+        [
+          {
+            "node": "Slack 에러 알림 전송",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "timezone": "Asia/Seoul",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "errorWorkflow": "uunTTow5CfpWRON8",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": null,
+  "tags": []
+}
