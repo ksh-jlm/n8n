@@ -1,0 +1,63 @@
+{
+  "name": "[CRON] 매일 21:50 GitHub 자동 Push",
+  "nodes": [
+    {
+      "id": "trigger1",
+      "name": "매일 21:50",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "50 21 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "gitpush1",
+      "name": "Git Add Commit Push",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        550,
+        300
+      ],
+      "parameters": {
+        "command": "cd /d \"F:\\claude_1900\\workspace\\cluade2\\n8n\" && git add -A && (git diff --cached --quiet || git commit -m \"auto backup %date% %time%\") && git push origin main"
+      },
+      "notes": "매일 21:50 F:\\claude_1900\\workspace\\cluade2\\n8n 저장소를 add/commit/push. origin은 https://github.com/ksh-jlm/n8n.git (PAT/SSH 인증 기설정됨), 브랜치는 main."
+    }
+  ],
+  "connections": {
+    "매일 21:50": {
+      "main": [
+        [
+          {
+            "node": "Git Add Commit Push",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": null,
+  "tags": []
+}
