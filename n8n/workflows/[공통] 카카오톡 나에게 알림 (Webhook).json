@@ -1,0 +1,111 @@
+{
+  "name": "[공통] 카카오톡 나에게 알림 (Webhook)",
+  "nodes": [
+    {
+      "id": "webhook-kakao-0001",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        240,
+        300
+      ],
+      "webhookId": "d4e5f6a7-8b9c-4d1e-a2f3-b4c5d6e7f8a9",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "kakao-notify",
+        "options": {}
+      }
+    },
+    {
+      "id": "set-format-0002",
+      "name": "메시지 포맷",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        460,
+        300
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "kakaoText",
+              "type": "string",
+              "value": "={{ $json.body?.message ? $json.body.message : '🔔 새 웹훅 알림이 도착했습니다.\\n\\n' + JSON.stringify($json.body || $json) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "http-kakao-send-0003",
+      "name": "카카오톡 나에게 보내기",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://kapi.kakao.com/v2/api/talk/memo/default/send",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "template_object",
+              "value": "={{ JSON.stringify({ object_type: 'text', text: $json.kakaoText, link: { web_url: 'https://n8n.io', mobile_web_url: 'https://n8n.io' }, button_title: '확인' }) }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "credentials": {
+        "oAuth2Api": {
+          "id": "Gb0xfuGFaJ80SK0T",
+          "name": "Kakao 나에게 보내기"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "메시지 포맷",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "메시지 포맷": {
+      "main": [
+        [
+          {
+            "node": "카카오톡 나에게 보내기",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true
+  },
+  "pinData": {},
+  "meta": null
+}
