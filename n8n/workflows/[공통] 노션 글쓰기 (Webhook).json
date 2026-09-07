@@ -2,44 +2,41 @@
   "name": "[공통] 노션 글쓰기 (Webhook)",
   "nodes": [
     {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "notion-write",
+        "options": {}
+      },
       "id": "webhook-notion-0001",
       "name": "Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2.1,
       "position": [
         240,
-        300
+        304
       ],
-      "webhookId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f",
-      "parameters": {
-        "httpMethod": "POST",
-        "path": "notion-write",
-        "options": {}
-      }
+      "webhookId": "c1d2e3f4-5a6b-4c7d-8e9f-0a1b2c3d4e5f"
     },
     {
-      "id": "notion-create-0002",
-      "name": "노션 페이지 생성",
-      "type": "n8n-nodes-base.notion",
-      "typeVersion": 3,
-      "position": [
-        460,
-        300
-      ],
       "parameters": {
-        "authentication": "apiKey",
-        "resource": "page",
-        "operation": "create",
         "pageId": {
           "__rl": true,
-          "mode": "url",
-          "value": ""
+          "value": "https://app.notion.com/p/3d491498928f80389371f2c125be1619",
+          "mode": "url"
         },
         "title": "={{ $json.body.title }}",
         "contentType": "markdown",
         "markdown": "={{ $json.body.content }}",
         "options": {}
       },
+      "id": "notion-create-0002",
+      "name": "노션 페이지 생성",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 3,
+      "position": [
+        464,
+        304
+      ],
       "credentials": {
         "notionApi": {
           "id": "waRUFhz5t7nPHEPz",
@@ -66,7 +63,9 @@
     "saveDataErrorExecution": "all",
     "saveDataSuccessExecution": "all",
     "saveManualExecutions": true,
-    "saveExecutionProgress": true
+    "saveExecutionProgress": true,
+    "binaryMode": "separate",
+    "errorWorkflow": "uunTTow5CfpWRON8"
   },
   "pinData": {},
   "meta": null

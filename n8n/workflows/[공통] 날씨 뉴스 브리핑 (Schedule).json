@@ -1,5 +1,5 @@
 {
-  "name": "[공통] 날씨 뉴스 브리핑 (Schedule)",
+  "name": "[공통] 날씨&뉴스 브리핑 슬랙 전송 (Schedule)",
   "nodes": [
     {
       "id": "trg-schedule-0001",
@@ -71,22 +71,6 @@
       }
     },
     {
-      "id": "merge-node-0008",
-      "name": "데이터 병합",
-      "type": "n8n-nodes-base.merge",
-      "typeVersion": 3.2,
-      "position": [
-        680,
-        300
-      ],
-      "parameters": {
-        "mode": "combine",
-        "combineBy": "combineByPosition",
-        "options": {},
-        "joinMode": "keepEverything"
-      }
-    },
-    {
       "id": "code-format-0004",
       "name": "메시지 포맷",
       "type": "n8n-nodes-base.code",
@@ -128,6 +112,22 @@
         }
       },
       "webhookId": "0c066360-0504-4f13-a04b-b4704a80e6d1"
+    },
+    {
+      "id": "merge-node-0008",
+      "name": "데이터 병합",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        680,
+        300
+      ],
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {},
+        "joinMode": "keepEverything"
+      }
     }
   ],
   "connections": {
@@ -147,11 +147,33 @@
         ]
       ]
     },
+    "메시지 포맷": {
+      "main": [
+        [
+          {
+            "node": "Slack 전송",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
     "날씨 조회": {
       "main": [
         [
           {
             "node": "데이터 병합",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "데이터 병합": {
+      "main": [
+        [
+          {
+            "node": "메시지 포맷",
             "type": "main",
             "index": 0
           }
@@ -168,28 +190,6 @@
           }
         ]
       ]
-    },
-    "데이터 병합": {
-      "main": [
-        [
-          {
-            "node": "메시지 포맷",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "메시지 포맷": {
-      "main": [
-        [
-          {
-            "node": "Slack 전송",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
     }
   },
   "settings": {
@@ -197,8 +197,9 @@
     "saveDataErrorExecution": "all",
     "saveDataSuccessExecution": "all",
     "saveManualExecutions": true,
-    "saveExecutionProgress": true
+    "saveExecutionProgress": true,
+    "errorWorkflow": "uunTTow5CfpWRON8"
   },
-  "pinData": null,
+  "pinData": {},
   "meta": null
 }

@@ -152,8 +152,8 @@
           "name": "GitHub account"
         }
       },
-      "onError": "continueRegularOutput",
-      "webhookId": "1a9d98a1-1d96-4fc2-a0b0-c637c1777f92"
+      "webhookId": "1a9d98a1-1d96-4fc2-a0b0-c637c1777f92",
+      "onError": "continueRegularOutput"
     }
   ],
   "connections": {
@@ -215,10 +215,9 @@
   },
   "settings": {
     "executionOrder": "v1",
-    "timezone": "Asia/Seoul"
+    "timezone": "Asia/Seoul",
+    "errorWorkflow": "uunTTow5CfpWRON8"
   },
-  "staticData": null,
   "pinData": {},
-  "meta": null,
-  "tags": []
+  "meta": null
 }

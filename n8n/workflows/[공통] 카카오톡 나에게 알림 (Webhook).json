@@ -104,7 +104,8 @@
     "saveDataErrorExecution": "all",
     "saveDataSuccessExecution": "all",
     "saveManualExecutions": true,
-    "saveExecutionProgress": true
+    "saveExecutionProgress": true,
+    "errorWorkflow": "uunTTow5CfpWRON8"
   },
   "pinData": {},
   "meta": null

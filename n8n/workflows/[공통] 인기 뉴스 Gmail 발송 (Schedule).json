@@ -117,8 +117,9 @@
     }
   },
   "settings": {
-    "executionOrder": "v1"
+    "executionOrder": "v1",
+    "errorWorkflow": "uunTTow5CfpWRON8"
   },
-  "pinData": null,
+  "pinData": {},
   "meta": null
 }
