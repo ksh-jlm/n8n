@@ -1,0 +1,242 @@
+{
+  "name": "[공통] 슬랙 일정 등록 (Slack Trigger)",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "message"
+        ],
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "options": {}
+      },
+      "id": "slack-trigger-0001",
+      "name": "Slack 메시지 수신",
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "b7a3c9e2-5f1d-4a2e-9c6b-1a2b3c4d5e6f",
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const TZ = 'Asia/Seoul';\nconst event = $input.first().json;\n\n// 봇이 보낸 메시지(다른 워크플로우의 알림 등)는 무시하여 파싱/루프를 방지한다\nif (event.bot_id || event.subtype) {\n  return [];\n}\n\nconst text = (event.text || '').trim();\n\nfunction pad(n) {\n  return String(n).padStart(2, '0');\n}\n\n// KST 기준 오프셋(+09:00)을 붙인 ISO 문자열 생성\nfunction toKSTISOString(year, month, day, hour, minute) {\n  return `${year}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00+09:00`;\n}\n\nfunction getKSTNowParts() {\n  const parts = new Intl.DateTimeFormat('en-US', {\n    timeZone: TZ, year: 'numeric', month: 'numeric', day: 'numeric'\n  }).formatToParts(new Date()).reduce((acc, p) => { acc[p.type] = p.value; return acc; }, {});\n  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day) };\n}\n\n// 연도 없이 월/일만 주어진 경우: 올해 기준으로 계산하되, 이미 지난 날짜면 내년으로 이월\nfunction resolveYear(month, day, hour, minute) {\n  const now = getKSTNowParts();\n  let year = now.year;\n  const candidate = new Date(Date.UTC(year, month - 1, day, hour, minute));\n  const nowUTC = new Date(Date.UTC(now.year, now.month - 1, now.day, 0, 0));\n  if (candidate < nowUTC) {\n    year += 1;\n  }\n  return year;\n}\n\nlet match;\nlet year, month, day, hour, minute, title;\n\n// 1) ISO 형식: 2026-09-10 15:30 팀 회의\nmatch = text.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})\\s+(\\d{1,2}):(\\d{2})\\s+(.+)$/s);\nif (match) {\n  [, year, month, day, hour, minute, title] = match;\n  year = Number(year); month = Number(month); day = Number(day); hour = Number(hour); minute = Number(minute);\n}\n\n// 2) 슬래시 형식: 9/10 15:30 팀 회의 (연도 없음 -> 자동 보정)\nif (!match) {\n  match = text.match(/^(\\d{1,2})\\/(\\d{1,2})\\s+(\\d{1,2}):(\\d{2})\\s+(.+)$/s);\n  if (match) {\n    [, month, day, hour, minute, title] = match;\n    month = Number(month); day = Number(day); hour = Number(hour); minute = Number(minute);\n    year = resolveYear(month, day, hour, minute);\n  }\n}\n\n// 3) 한국어 형식: 9월 10일 [오전|오후] 3시[30분] 팀 회의 (연도 없음 -> 자동 보정)\nif (!match) {\n  match = text.match(/^(\\d{1,2})월\\s*(\\d{1,2})일\\s*(오전|오후)?\\s*(\\d{1,2})시\\s*(?:(\\d{1,2})분)?\\s*(.+)$/s);\n  if (match) {\n    let ampm, h, m;\n    [, month, day, ampm, h, m, title] = match;\n    month = Number(month); day = Number(day);\n    h = Number(h);\n    minute = m ? Number(m) : 0;\n    if (ampm === '오후' && h < 12) h += 12;\n    if (ampm === '오전' && h === 12) h = 0;\n    hour = h;\n    year = resolveYear(month, day, hour, minute);\n  }\n}\n\nif (!match || !title || !title.trim()) {\n  return [{\n    json: {\n      parsedOk: 'false',\n      channel: event.channel,\n      threadTs: event.ts,\n      rawText: text,\n      errorMessage: ':warning: 일정 형식을 확인하지 못했어요. 아래 형식으로 다시 보내주세요.\\n`2026-09-10 15:30 팀 회의`\\n`9/10 15:30 팀 회의`\\n`9월 10일 오후 3시30분 팀 회의`'\n    }\n  }];\n}\n\nconst startISO = toKSTISOString(year, month, day, hour, minute);\nconst endDate = new Date(`${startISO}`);\nendDate.setUTCHours(endDate.getUTCHours() + 1);\nconst endISO = endDate.toISOString();\n\nreturn [{\n  json: {\n    parsedOk: 'true',\n    channel: event.channel,\n    threadTs: event.ts,\n    rawText: text,\n    title: title.trim(),\n    startISO,\n    endISO,\n  }\n}];"
+      },
+      "id": "code-parse-0002",
+      "name": "일정 파싱",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cond-parsed-ok",
+              "leftValue": "={{ $json.parsedOk }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "if-parsed-0003",
+      "name": "파싱 성공?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "mode": "list",
+          "value": "primary",
+          "cachedResultName": "primary"
+        },
+        "start": "={{ $json.startISO }}",
+        "end": "={{ $json.endISO }}",
+        "additionalFields": {
+          "description": "={{ 'Slack #n8n에서 자동 등록됨\\n원본 메시지: ' + $json.rawText }}",
+          "summary": "={{ $json.title }}"
+        }
+      },
+      "id": "gcal-create-0004",
+      "name": "캘린더 일정 등록",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        208
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "FspELq84TMyTu8gN",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('일정 파싱').item.json.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ ':white_check_mark: 일정이 등록되었습니다.\\n*' + $('일정 파싱').item.json.title + '*\\n' + $('일정 파싱').item.json.startISO }}",
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $('일정 파싱').item.json.threadTs }}"
+            }
+          }
+        }
+      },
+      "id": "slack-success-0005",
+      "name": "등록 완료 회신",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1120,
+        208
+      ],
+      "webhookId": "030099d6-0437-4359-b2ab-40e9ab0f354c",
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $json.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.errorMessage }}",
+        "otherOptions": {
+          "thread_ts": {
+            "replyValues": {
+              "thread_ts": "={{ $json.threadTs }}"
+            }
+          }
+        }
+      },
+      "id": "slack-error-0006",
+      "name": "형식 오류 안내",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        912,
+        432
+      ],
+      "webhookId": "81189714-3ccd-4668-93e9-a0deaa3dd283",
+      "credentials": {
+        "slackApi": {
+          "id": "jcwy7idEiVodxf5l",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Slack 메시지 수신": {
+      "main": [
+        [
+          {
+            "node": "일정 파싱",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "일정 파싱": {
+      "main": [
+        [
+          {
+            "node": "파싱 성공?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "파싱 성공?": {
+      "main": [
+        [
+          {
+            "node": "캘린더 일정 등록",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "형식 오류 안내",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "캘린더 일정 등록": {
+      "main": [
+        [
+          {
+            "node": "등록 완료 회신",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "saveExecutionProgress": true,
+    "timezone": "Asia/Seoul",
+    "binaryMode": "separate",
+    "errorWorkflow": "uunTTow5CfpWRON8"
+  },
+  "staticData": null,
+  "pinData": {},
+  "meta": null,
+  "tags": []
+}
